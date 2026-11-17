@@ -1,0 +1,26 @@
+@baseUrl = http://localhost:53425
+@token = paste-access-token-here
+
+### Register (sample account, change the credentials)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{"email":"student@example.com","password":"ExamplePassword!2026","fullName":"Test Student"}
+
+### Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{"email":"student@example.com","password":"ExamplePassword!2026"}
+
+### Current user
+GET {{baseUrl}}/api/me
+Authorization: Bearer {{token}}
+
+### Activate Owner; replace token with the new accessToken from the response
+POST {{baseUrl}}/api/me/roles/owner
+Authorization: Bearer {{token}}
+
+### Activate Organizer
+POST {{baseUrl}}/api/me/roles/organizer
+Authorization: Bearer {{token}}

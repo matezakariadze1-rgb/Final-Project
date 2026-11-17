@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SpaceHub.Api/SpaceHub.Api.csproj" />
+    <Project Path="src/SpaceHub.Application/SpaceHub.Application.csproj" />
+    <Project Path="src/SpaceHub.Domain/SpaceHub.Domain.csproj" />
+    <Project Path="src/SpaceHub.Infrastructure/SpaceHub.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SpaceHub.IntegrationTests/SpaceHub.IntegrationTests.csproj" />
+  </Folder>
+</Solution>

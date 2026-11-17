@@ -1,0 +1,44 @@
+@baseUrl = http://localhost:53425
+@attendeeToken = paste-attendee-access-token
+@organizerToken = paste-event-organizer-access-token
+@eventId = 1
+@privateEventId = 2
+@accessCode = paste-private-event-accessCode
+@ticketCode = paste-EVT-ticket-code
+
+### Register for a PUBLIC published future event; copy ticket.code
+POST {{baseUrl}}/api/events/{{eventId}}/registrations
+Authorization: Bearer {{attendeeToken}}
+Content-Type: application/json
+
+{}
+
+### Register for a PRIVATE published future event
+POST {{baseUrl}}/api/events/{{privateEventId}}/registrations
+Authorization: Bearer {{attendeeToken}}
+Content-Type: application/json
+
+{"accessCode":"{{accessCode}}"}
+
+### My upcoming active registrations and tickets
+GET {{baseUrl}}/api/me/registrations?upcomingOnly=true&page=1&pageSize=20
+Authorization: Bearer {{attendeeToken}}
+
+### Organizer sees confirmed attendees (status=0)
+GET {{baseUrl}}/api/events/{{eventId}}/attendees?status=0&page=1&pageSize=20
+Authorization: Bearer {{organizerToken}}
+
+### Check in: only from two hours before event start until event end
+POST {{baseUrl}}/api/tickets/{{ticketCode}}/check-in
+Authorization: Bearer {{organizerToken}}
+
+### Cancel my registration before event start
+DELETE {{baseUrl}}/api/events/{{eventId}}/registrations
+Authorization: Bearer {{attendeeToken}}
+
+### Register again (a NEW code is issued; the old code no longer works)
+POST {{baseUrl}}/api/events/{{eventId}}/registrations
+Authorization: Bearer {{attendeeToken}}
+Content-Type: application/json
+
+{}

@@ -1,0 +1,50 @@
+@baseUrl = http://localhost:53425
+@token = paste-owner-access-token-here
+@spaceId = 1
+@serviceId = 1
+@packageId = 1
+@spaceRowVersion = paste-latest-space-rowVersion-here
+
+### Get the current space version before the first mutation
+GET {{baseUrl}}/api/spaces/{{spaceId}}
+Authorization: Bearer {{token}}
+
+### Create service; copy returned id and spaceRowVersion
+POST {{baseUrl}}/api/spaces/{{spaceId}}/services
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"name":"Projector","pricingType":0,"unitPrice":30,"spaceRowVersion":"{{spaceRowVersion}}"}
+
+### List services
+GET {{baseUrl}}/api/spaces/{{spaceId}}/services?page=1&pageSize=20
+Authorization: Bearer {{token}}
+
+### Update service with the latest spaceRowVersion
+PUT {{baseUrl}}/api/spaces/{{spaceId}}/services/{{serviceId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"name":"Projector","pricingType":0,"unitPrice":40,"isActive":true,"spaceRowVersion":"{{spaceRowVersion}}"}
+
+### Create package; price is a fixed extra amount, excluding room rent
+POST {{baseUrl}}/api/spaces/{{spaceId}}/packages
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"name":"Equipment Package","description":"Includes one projector","price":25,"items":[{"spaceServiceId":{{serviceId}},"quantity":1}],"spaceRowVersion":"{{spaceRowVersion}}"}
+
+### List packages
+GET {{baseUrl}}/api/spaces/{{spaceId}}/packages?search=Equipment&page=1&pageSize=20
+Authorization: Bearer {{token}}
+
+### Package details
+GET {{baseUrl}}/api/spaces/{{spaceId}}/packages/{{packageId}}
+Authorization: Bearer {{token}}
+
+### Deactivate package before deactivating a service included in it
+PUT {{baseUrl}}/api/spaces/{{spaceId}}/packages/{{packageId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"name":"Equipment Package","description":"Includes one projector","price":25,"items":[{"spaceServiceId":{{serviceId}},"quantity":1}],"isActive":false,"spaceRowVersion":"{{spaceRowVersion}}"}

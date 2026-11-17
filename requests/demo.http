@@ -1,0 +1,36 @@
+@baseUrl = http://localhost:53425
+@token = PASTE_ACCESS_TOKEN
+@eventId = 1
+
+### Login as attendee (change email to owner.demo or organizer.demo for their views)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "attendee.demo@spacehub.example",
+  "password": "SpaceHubDemo!2026"
+}
+
+### Public events: copy an actual ID; IDs are not fixed by the seed
+GET {{baseUrl}}/api/events
+Authorization: Bearer {{token}}
+
+### Attendee tickets
+GET {{baseUrl}}/api/me/registrations
+Authorization: Bearer {{token}}
+
+### Owner's bookings awaiting a decision (requires owner token)
+GET {{baseUrl}}/api/me/received-bookings?status=Pending
+Authorization: Bearer {{token}}
+
+### Organizer's events, including private and draft (requires organizer token)
+GET {{baseUrl}}/api/me/events
+Authorization: Bearer {{token}}
+
+### Detail includes private access code only for its organizer
+GET {{baseUrl}}/api/events/{{eventId}}
+Authorization: Bearer {{token}}
+
+### Organizer's attendee list
+GET {{baseUrl}}/api/events/{{eventId}}/attendees
+Authorization: Bearer {{token}}

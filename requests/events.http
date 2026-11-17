@@ -1,0 +1,68 @@
+@baseUrl = http://localhost:53425
+@organizerToken = paste-new-organizer-token
+@viewerToken = paste-viewer-token
+@bookingId = 1
+@eventId = 1
+@tagId = 1
+@rowVersion = paste-latest-event-rowVersion
+@accessCode = paste-private-code-from-organizer-response
+
+### Organizer profile (once Organizer role is activated)
+PUT {{baseUrl}}/api/me/organizer-profile
+Authorization: Bearer {{organizerToken}}
+Content-Type: application/json
+
+{"companyName":"Learning Group","phone":"+995555123456","website":"https://example.com","description":"Practical workshops"}
+
+### Available tags
+GET {{baseUrl}}/api/tags?page=1&pageSize=20
+Authorization: Bearer {{organizerToken}}
+
+### Create tag; use returned id in tagIds
+POST {{baseUrl}}/api/tags
+Authorization: Bearer {{organizerToken}}
+Content-Type: application/json
+
+{"name":"Education"}
+
+### Create Draft inside YOUR confirmed booking (adjust future dates and bookingId)
+POST {{baseUrl}}/api/events
+Authorization: Bearer {{organizerToken}}
+Content-Type: application/json
+
+{"bookingId":{{bookingId}},"title":"Programming Workshop","description":"A practical workshop for students","startsAt":"2026-12-01T10:30:00+04:00","endsAt":"2026-12-01T11:30:00+04:00","maxAttendees":20,"ticketPrice":0,"visibility":0,"tagIds":[{{tagId}}]}
+
+### My events, including drafts/private/cancelled
+GET {{baseUrl}}/api/me/events?page=1&pageSize=20
+Authorization: Bearer {{organizerToken}}
+
+### Details: copy current rowVersion
+GET {{baseUrl}}/api/events/{{eventId}}
+Authorization: Bearer {{organizerToken}}
+
+### Publish Draft
+POST {{baseUrl}}/api/events/{{eventId}}/publish
+Authorization: Bearer {{organizerToken}}
+Content-Type: application/json
+
+{"rowVersion":"{{rowVersion}}"}
+
+### Public catalog
+GET {{baseUrl}}/api/events?city=Tbilisi&freeOnly=true&page=1&pageSize=20
+Authorization: Bearer {{viewerToken}}
+
+### Private event: create with visibility=1, publish, share the organizer's accessCode
+GET {{baseUrl}}/api/private-events/{{accessCode}}
+Authorization: Bearer {{viewerToken}}
+
+### Cancel event; its space booking stays confirmed
+POST {{baseUrl}}/api/events/{{eventId}}/cancel
+Authorization: Bearer {{organizerToken}}
+Content-Type: application/json
+
+{"rowVersion":"{{rowVersion}}"}
+
+### Alternative: delete an unpublished Draft with its latest version
+DELETE {{baseUrl}}/api/events/{{eventId}}
+Authorization: Bearer {{organizerToken}}
+If-Match: "{{rowVersion}}"

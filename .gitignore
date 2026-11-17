@@ -1,0 +1,65 @@
+# .NET build output
+**/bin/
+**/obj/
+.artifacts/
+[Pp]ublish/
+
+# IDE and local user settings
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln.docstates
+*.userosscache
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/secrets.json
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Database files
+*.mdf
+*.ldf
+*.ndf
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.bak
+
+# Frontend dependencies and generated output
+**/node_modules/
+**/.vite/
+**/.vite-temp/
+**/dist/
+**/*.tsbuildinfo
+src/SpaceHub.Api/wwwroot/web/
+
+# Test output, logs and temporary files
+**/TestResults/
+**/coverage/
+*.trx
+*.coverage
+*.coveragexml
+*.log
+*.dmp
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Local guides and generated documentation; keep only the main README
+/docs/
+*.md
+!/README.md
+**/.gitkeep

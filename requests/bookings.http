@@ -1,0 +1,58 @@
+@baseUrl = http://localhost:53425
+@customerToken = paste-customer-access-token
+@ownerToken = paste-owner-access-token
+@spaceId = 1
+@bookingId = 1
+@spaceRowVersion = paste-quote-spaceRowVersion
+@rowVersion = paste-booking-rowVersion
+
+### Set future dates and configure the space's working hours first
+GET {{baseUrl}}/api/spaces/{{spaceId}}/availability?startsAt=2026-12-01T06:00:00Z&endsAt=2026-12-01T08:00:00Z&attendeeCount=20
+Authorization: Bearer {{customerToken}}
+
+### Quote without package/services
+POST {{baseUrl}}/api/booking-quotes
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{"spaceId":{{spaceId}},"startsAt":"2026-12-01T10:00:00+04:00","endsAt":"2026-12-01T12:00:00+04:00","attendeeCount":20,"packageId":null,"additionalServices":[]}
+
+### Create from quote; copy the booking id and rowVersion
+POST {{baseUrl}}/api/bookings
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{"spaceId":{{spaceId}},"startsAt":"2026-12-01T10:00:00+04:00","endsAt":"2026-12-01T12:00:00+04:00","attendeeCount":20,"packageId":null,"additionalServices":[],"spaceRowVersion":"{{spaceRowVersion}}"}
+
+### My requests
+GET {{baseUrl}}/api/me/bookings?page=1&pageSize=20
+Authorization: Bearer {{customerToken}}
+
+### Owner's pending requests
+GET {{baseUrl}}/api/me/received-bookings?status=0
+Authorization: Bearer {{ownerToken}}
+
+### Details (refresh rowVersion before a decision)
+GET {{baseUrl}}/api/bookings/{{bookingId}}
+Authorization: Bearer {{ownerToken}}
+
+### Confirm pending
+POST {{baseUrl}}/api/bookings/{{bookingId}}/confirm
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{"rowVersion":"{{rowVersion}}"}
+
+### Alternative: reject pending
+POST {{baseUrl}}/api/bookings/{{bookingId}}/reject
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{"reason":"Space maintenance","rowVersion":"{{rowVersion}}"}
+
+### Customer cancellation, observing the 24-hour confirmed-booking rule
+POST {{baseUrl}}/api/bookings/{{bookingId}}/cancel
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{"reason":"Plans changed","rowVersion":"{{rowVersion}}"}

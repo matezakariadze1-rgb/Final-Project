@@ -1,0 +1,45 @@
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
+import { api, cityName, dayNames, money } from './api';
+import type { Hours, Session, Space } from './types';
+import { Empty, ErrorBox, Icon, Loading, Pager, usePage } from './shared';
+
+export function OwnerAccess({ token, onActivate }: { token: string; onActivate: (session: Session) => void }) {
+  const [busy,setBusy]=useState(false); const [error,setError]=useState('');
+  async function activate() {
+    setBusy(true); setError('');
+    try { onActivate(await api<Session>('/me/roles/owner',token,{})); }
+    catch(e) { setError((e as Error).message); } finally { setBusy(false); }
+  }
+  return <section className="panel"><p className="eyebrow">გახდი სივრცის მასპინძელი</p><h1>დაამატე შენი სივრცე</h1><p>გამოაქვეყნე სივრცე, მიუთითე ფასი და სამუშაო საათები, მიიღე ჯავშნის მოთხოვნები.</p><p className="muted">ამავე ანგარიშს დაემატება მფლობელის როლი. ორგანიზატორისა და მონაწილის შესაძლებლობები შენარჩუნდება.</p><ErrorBox message={error}/><button className="primary" disabled={busy} onClick={activate}>{busy ? 'აქტიურდება…' : 'მფლობელის როლის გააქტიურება'}</button></section>;
+}
+
+export function OwnerSpaces({token}:{token:string}) {
+  const [page,setPage]=useState(1); const [refresh,setRefresh]=useState(0);
+  const {data,error,loading}=usePage<Space>(`/me/spaces?page=${page}&pageSize=10`,token,refresh);
+  return <><header className="page-title"><div><p className="eyebrow">სივრცის მასპინძელი</p><h1>ჩემი სივრცეები</h1><p className="muted">დაამატე სივრცე, რომ სხვა მომხმარებლებმა დაჯავშნონ.</p></div><a className="primary" href="#spaces/new">სივრცის დამატება<Icon name="arrow"/></a></header><ErrorBox message={error}/>{error && <button className="secondary" onClick={()=>setRefresh(refresh+1)}>ხელახლა ცდა</button>}{loading ? <Loading/> : !data?.items.length ? <Empty title="სივრცე ჯერ არ დაგიმატებია"><a className="primary" href="#spaces/new">პირველი სივრცის დამატება</a></Empty> : <div className="table-wrap"><table><thead><tr><th>სივრცე</th><th>ქალაქი</th><th>ტევადობა</th><th>საათის ფასი</th><th>მდგომარეობა</th><th>მართვა</th></tr></thead><tbody>{data.items.map(s=><tr key={s.id}><td><strong>{s.name}</strong><small>{s.address}</small></td><td>{cityName(s.city)}</td><td>{s.capacity}</td><td>{money(s.hourlyRate)}</td><td><span className={`status status-${s.isActive && s.workingDays ? 1 : 0}`}>{!s.isActive ? 'არააქტიური' : s.workingDays ? 'ჯავშნებისთვის მზადაა' : 'საათები შესავსებია'}</span></td><td><a className="text-button" href={`#catalog/${s.id}`}>მომსახურებები და პაკეტები</a><br/><a className="text-button" href={`#manage-space/${s.id}`}>სამუშაო საათები</a><br/><a className="text-button" href={`#space/${s.id}`}>ნახვა</a></td></tr>)}</tbody></table></div>}{data && <Pager page={page} totalPages={data.totalPages} onChange={setPage}/>}</>;
+}
+
+export function NewSpace({token,onCreated}:{token:string;onCreated:(space:Space)=>void}) {
+  const [busy,setBusy]=useState(false); const [error,setError]=useState('');
+  async function submit(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault(); if(busy)return; const form=new FormData(e.currentTarget);
+    const text=(name:string)=>String(form.get(name)||'').trim();
+    const city=({'თბილისი':'Tbilisi','ბათუმი':'Batumi','ქუთაისი':'Kutaisi'} as Record<string,string>)[text('city')]||text('city');
+    setBusy(true);setError('');
+    try { const space=await api<Space>('/spaces',token,{name:text('name'),description:text('description'),address:text('address'),city,capacity:Number(form.get('capacity')),hourlyRate:Number(form.get('hourlyRate'))}); onCreated(space); }
+    catch(e){setError((e as Error).message);}finally{setBusy(false);}
+  }
+  return <><a className="back-link" href="#my-spaces">← ჩემი სივრცეები</a><header className="page-title"><div><p className="eyebrow">ნაბიჯი 1 / 2</p><h1>სივრცის დამატება</h1><p className="muted">შეავსე სივრცის მონაცემები. შემდეგ მიუთითებ სამუშაო საათებს.</p></div></header><form onSubmit={submit} className="panel" style={{maxWidth:850}}><ErrorBox message={error}/><fieldset disabled={busy}><div className="form-grid"><label>სივრცის დასახელება<input name="name" required minLength={2} maxLength={120}/></label><label>ქალაქი<input name="city" required minLength={2} maxLength={60} list="owner-cities"/><datalist id="owner-cities"><option value="თბილისი"/><option value="ბათუმი"/><option value="ქუთაისი"/></datalist></label><label>მისამართი<input name="address" required minLength={5} maxLength={200}/></label><label>ტევადობა (სტუმრები)<input name="capacity" type="number" min={1} max={100000} required/></label><label>საათის ფასი (₾)<input name="hourlyRate" type="number" min={0} max={100000} step="0.01" required/></label></div><label style={{marginTop:20}}>აღწერა<textarea name="description" rows={5} required maxLength={3000}/></label><p className="hint">მფლობელად ავტომატურად შენი ანგარიში მიეთითება. სამუშაო საათების შენახვამდე სივრცე ვერ დაიჯავშნება.</p><div className="action-row"><button className="primary" type="submit">{busy ? 'ინახება…' : 'შენახვა და საათების მითითება'}</button><a className="secondary" href="#my-spaces">დაბრუნება</a></div></fieldset></form></>;
+}
+
+type WorkingDay={dayOfWeek:number;opensAt:string;closesAt:string;enabled:boolean};
+type HoursResponse=Hours & {rowVersion:string};
+export function ManageSpaceHours({id,token,notify}:{id:number;token:string;notify:(message:string)=>void}) {
+  const [space,setSpace]=useState<Space>();const [version,setVersion]=useState('');const [days,setDays]=useState<WorkingDay[]>([]);const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [refresh,setRefresh]=useState(0);
+  useEffect(()=>{const controller=new AbortController();setLoading(true);setError('');Promise.all([api<Space>(`/spaces/${id}`,token,undefined,controller.signal),api<HoursResponse>(`/spaces/${id}/working-hours`,token,undefined,controller.signal)]).then(([s,h])=>{setSpace(s);setVersion(h.rowVersion);setDays([1,2,3,4,5,6,0].map(dayOfWeek=>{const existing=h.days.find(d=>d.dayOfWeek===dayOfWeek);return {dayOfWeek,opensAt:existing?.opensAt.slice(0,5)||'09:00',closesAt:existing?.closesAt.slice(0,5)||'18:00',enabled:!!existing};}));}).catch(e=>{if(!controller.signal.aborted)setError(e.message);}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>controller.abort();},[id,token,refresh]);
+  function change(dayOfWeek:number,patch:Partial<WorkingDay>){setDays(days.map(day=>day.dayOfWeek===dayOfWeek?{...day,...patch}:day));}
+  async function save(e:FormEvent){e.preventDefault();setError('');const selected=days.filter(d=>d.enabled);if(!selected.length){setError('აირჩიე მინიმუმ ერთი სამუშაო დღე.');return;}if(selected.some(d=>d.opensAt>=d.closesAt)){setError('დახურვის დრო გახსნის დროზე გვიან უნდა იყოს.');return;}setBusy(true);try{const response=await api<HoursResponse>(`/spaces/${id}/working-hours`,token,{days:selected.map(({dayOfWeek,opensAt,closesAt})=>({dayOfWeek,opensAt:opensAt+':00',closesAt:closesAt+':00'})),rowVersion:version},undefined,'PUT');setVersion(response.rowVersion);notify(space?.isActive ? 'სამუშაო საათები შენახულია. მომხმარებლებს უკვე შეუძლიათ სივრცის დაჯავშნა სამუშაო საათების ფარგლებში.' : 'სამუშაო საათები შენახულია. სივრცე კვლავ არააქტიურია.');location.hash='my-spaces';}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
+  if(loading)return <Loading/>;
+  return <><a className="back-link" href="#my-spaces">← ჩემი სივრცეები</a><header className="page-title"><div><p className="eyebrow">სივრცის ხელმისაწვდომობა</p><h1>{space?.name || 'სამუშაო საათები'}</h1><p className="muted">მონიშნე სამუშაო დღეები და დრო საქართველოს სარტყლით. მოუნიშნავი დღეები დაკეტილია.</p></div></header><form className="panel" style={{maxWidth:850}} onSubmit={save}><ErrorBox message={error}/>{space && <fieldset disabled={busy}>{days.map(day=><div className="service-row" key={day.dayOfWeek}><label className="check-label" style={{minWidth:170}}><input type="checkbox" checked={day.enabled} onChange={e=>change(day.dayOfWeek,{enabled:e.target.checked})}/>{dayNames[day.dayOfWeek]}</label><label>გახსნა<input aria-label={`${dayNames[day.dayOfWeek]} — გახსნა`} type="time" step={1800} disabled={!day.enabled || busy} required={day.enabled} value={day.opensAt} onChange={e=>change(day.dayOfWeek,{opensAt:e.target.value})}/></label><label>დახურვა<input aria-label={`${dayNames[day.dayOfWeek]} — დახურვა`} type="time" step={1800} disabled={!day.enabled || busy} required={day.enabled} value={day.closesAt} onChange={e=>change(day.dayOfWeek,{closesAt:e.target.value})}/></label></div>)}<div className="action-row"><button className="primary" type="submit">{busy?'ინახება…':'სამუშაო საათების შენახვა'}</button></div></fieldset>}<button className="text-button" type="button" disabled={busy} onClick={()=>setRefresh(refresh+1)}>ბაზიდან ხელახლა ჩატვირთვა</button><p className="hint">თუ სივრცე უკვე შეიქმნა, საათების შენახვის შეცდომისას თავიდან დამატება არ არის საჭირო — განაახლე მონაცემები და გაიმეორე მხოლოდ ეს ნაბიჯი.</p></form></>;
+}
